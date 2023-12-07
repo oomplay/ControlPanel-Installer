@@ -301,63 +301,56 @@ sed -i -e "s|<db_pass>|$DB_PASS|g" /var/www/controlpanel/.env.example
 }
 
 check_database_info() {
-# Check if mysql has a password
-if ! mariadb -u root -e "SHOW DATABASES;" &>/dev/null; then
-  MYSQL_PASSWORD=true
-  print_warning "It looks like your MariaDB has a password, please enter it now"
-  password_input MYSQL_ROOT_PASS "MariaDB Password: " "Password cannot by empty!"
-  if mariadb -u root -p"$MYSQL_ROOT_PASS" -e "SHOW DATABASES;" &>/dev/null; then
+  # Check if MariaDB has a password
+  if ! mariadb -u root -e "SHOW DATABASES;" &>/dev/null; then
+    MARIADB_PASSWORD=true
+    print_warning "It looks like your MariaDB has a password, please enter it now"
+    password_input MARIADB_ROOT_PASS "MariaDB Password: " "Password cannot be empty!"
+    if mariadb -u root -p"$MARIADB_ROOT_PASS" -e "SHOW DATABASES;" &>/dev/null; then
       print "The password is correct, continuing..."
     else
       print_warning "The password is not correct, please re-enter the password"
       check_database_info
+    fi
   fi
-fi
 
-
-# Checks to see if the chosen user already exists
-if [ "$MYSQL_PASSWORD" == true ]; then
-    mariadb -u root -p"$MYSQL_ROOT_PASS" -e "SELECT User FROM mysql.user;" 2>/dev/null >> "$INFORMATIONS/check_user.txt"
-else
+  # Checks to see if the chosen user already exists
+  if [ "$MARIADB_PASSWORD" == true ]; then
+    mariadb -u root -p"$MARIADB_ROOT_PASS" -e "SELECT User FROM mysql.user;" 2>/dev/null >> "$INFORMATIONS/check_user.txt"
+  else
     mariadb -u root -e "SELECT User FROM mysql.user;" 2>/dev/null >> "$INFORMATIONS/check_user.txt"
-fi
-
-sed -i '1d' "$INFORMATIONS/check_user.txt"
-
-while grep -q "$DB_USER" "$INFORMATIONS/check_user.txt"; do
+  fi
+  sed -i '1d' "$INFORMATIONS/check_user.txt"
+  while grep -q "$DB_USER" "$INFORMATIONS/check_user.txt"; do
     print_warning "Oops, it looks like user ${GREEN}$DB_USER${RESET} already exists in your MariaDB, please use another one."
     echo -n "* Database User: "
     read -r DB_USER
-done
+  done
+  rm -r "$INFORMATIONS/check_user.txt"
 
-rm -r "$INFORMATIONS/check_user.txt"
-
-
-# Check if the database already exists in mysql
-if [ "$MYSQL_PASSWORD" == true ]; then
-    mariadb -u root -p"$MYSQL_ROOT_PASS" -e "SHOW DATABASES;" 2>/dev/null >> "$INFORMATIONS/check_db.txt"
-else
+  # Check if the database already exists in MariaDB
+  if [ "$MARIADB_PASSWORD" == true ]; then
+    mariadb -u root -p"$MARIADB_ROOT_PASS" -e "SHOW DATABASES;" 2>/dev/null >> "$INFORMATIONS/check_db.txt"
+  else
     mariadb -u root -e "SHOW DATABASES;" 2>/dev/null >> "$INFORMATIONS/check_db.txt"
-fi
-
-sed -i '1d' "$INFORMATIONS/check_db.txt"
-
-while grep -q "$DB_NAME" "$INFORMATIONS/check_db.txt"; do
-  print_warning "Oops, it looks like the database ${GREEN}$DB_NAME${RESET} already exists in your MariaDB, please use another one."
-  echo -n "* Database Name: "
-  read -r DB_NAME
-done
-
-rm -r "$INFORMATIONS/check_db.txt"
+  fi
+  sed -i '1d' "$INFORMATIONS/check_db.txt"
+  while grep -q "$DB_NAME" "$INFORMATIONS/check_db.txt"; do
+    print_warning "Oops, it looks like the database ${GREEN}$DB_NAME${RESET} already exists in your MariaDB, please use another one."
+    echo -n "* Database Name: "
+    read -r DB_NAME
+  done
+  rm -r "$INFORMATIONS/check_db.txt"
+}
 
 configure_database() {
   print "Configuring Database..."
 
-  if [ "$MYSQL_PASSWORD" == true ]; then
-    mariadb -u root -p"$MYSQL_ROOT_PASS" -e "CREATE DATABASE ${DB_NAME};" &>/dev/null
-    mariadb -u root -p"$MYSQL_ROOT_PASS" -e "CREATE USER '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASS}';" &>/dev/null
-    mariadb -u root -p"$MYSQL_ROOT_PASS" -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'${DB_HOST}';" &>/dev/null
-    mariadb -u root -p"$MYSQL_ROOT_PASS" -e "FLUSH PRIVILEGES;" &>/dev/null
+  if [ "$MARIADB_PASSWORD" == true ]; then
+    mariadb -u root -p"$MARIADB_ROOT_PASS" -e "CREATE DATABASE ${DB_NAME};" &>/dev/null
+    mariadb -u root -p"$MARIADB_ROOT_PASS" -e "CREATE USER '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASS}';" &>/dev/null
+    mariadb -u root -p"$MARIADB_ROOT_PASS" -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'${DB_HOST}';" &>/dev/null
+    mariadb -u root -p"$MARIADB_ROOT_PASS" -e "FLUSH PRIVILEGES;" &>/dev/null
   else
     mariadb -u root -e "CREATE DATABASE ${DB_NAME};"
     mariadb -u root -e "CREATE USER '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASS}';"
@@ -774,3 +767,4 @@ echo
 }
 
 # Exec Script #
+main
