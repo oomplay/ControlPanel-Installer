@@ -8,7 +8,7 @@ This script is not associated with the official project.
 
 <h1 align="center">Features</h1>
 
-- Change Mysql to mariadb Via oom1✓
+- Change Mysql to Mariadb via oom1 ✓
 - Automatic installation of the ControlPanel (dependencies, database, cronjob, nginx).
 - Automatic configuration of UFW (firewall for Ubuntu/Debian).
 - (Optional) automatic configuration of Let's Encrypt.
