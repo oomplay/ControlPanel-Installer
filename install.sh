@@ -774,4 +774,3 @@ echo
 }
 
 # Exec Script #
-main
